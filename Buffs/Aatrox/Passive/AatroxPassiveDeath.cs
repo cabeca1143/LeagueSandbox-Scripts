@@ -30,8 +30,12 @@ namespace Buffs
         public IStatsModifier StatsModifier { get; private set; } = new StatsModifier();
         private IBuff ThisBuff;
 		IAttackableUnit Unit;
+		float timeSinceLastTick;
+        float TickingDamage;
+		ISpell Spell;
         public void OnActivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
         {
+			Spell = ownerSpell;
 			Unit = unit;
 			ThisBuff = buff;
 			var owner = ownerSpell.CastInfo.Owner as IChampion;
@@ -49,54 +53,6 @@ namespace Buffs
 			buff.SetStatusEffect(StatusFlags.Stunned, true);
 			unit.Stats.SetActionState(ActionState.CAN_ATTACK, false);
             buff.SetStatusEffect(StatusFlags.Ghosted, true);
-			CreateTimer((float) 0.25 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 0.5 , () =>
-            {
-			    Heal(ownerSpell);
-			});
-			CreateTimer((float) 0.75 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 1 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 1.25 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 1.5 , () =>
-            {
-			    Heal(ownerSpell);
-			});
-			CreateTimer((float) 1.75 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 2 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 2.25 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 2.5 , () =>
-            {
-			    Heal(ownerSpell);
-			});
-			CreateTimer((float) 2.75 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
-			CreateTimer((float) 3 , () =>
-            {
-			    Heal(ownerSpell);
-			});	
         }
 		public void Heal(ISpell spell)
         {
@@ -129,6 +85,12 @@ namespace Buffs
         }
         public void OnUpdate(float diff)
         {
+			timeSinceLastTick += diff;
+            if (timeSinceLastTick >= 250.0f)
+            {              
+                Heal(Spell);
+                timeSinceLastTick = 0;
+            }
         }
     }
 }
