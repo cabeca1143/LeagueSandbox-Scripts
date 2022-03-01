@@ -1,86 +1,35 @@
-﻿using System.Numerics;
-using GameServerCore;
-using GameServerCore.Domain;
-using GameServerCore.Enums;
+﻿using GameServerCore.Enums;
 using GameServerCore.Domain.GameObjects;
 using GameServerCore.Domain.GameObjects.Spell;
-using static LeagueSandbox.GameServer.API.ApiFunctionManager;
-using LeagueSandbox.GameServer.Scripting.CSharp;
 using GameServerCore.Domain.GameObjects.Spell.Missile;
+using LeagueSandbox.GameServer.Scripting.CSharp;
+using System.Numerics;
 using LeagueSandbox.GameServer.API;
-using System.Collections.Generic;
+using static LeagueSandbox.GameServer.API.ApiFunctionManager;
 using GameServerCore.Scripting.CSharp;
+using GameServerCore.Domain.GameObjects.Spell.Sector;
+using LeagueSandbox.GameServer.Scripting.CSharp;
+using System.Numerics;
+using LeagueSandbox.GameServer.API;
+using GameServerCore.Scripting.CSharp;
+using GameServerCore.Enums;
+using System.Collections.Generic;
+using static LeagueSandbox.GameServer.API.ApiFunctionManager;
+
 
 namespace Spells
 {
-    public class ZedShadowDash : ISpellScript
+    public class ZedBasicAttack : ISpellScript
     {
+		IAttackableUnit Target;
         public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
         {
-            AutoFaceDirection = false,
             TriggersSpellCasts = true
             // TODO
         };
 
         public void OnActivate(IObjAiBase owner, ISpell spell)
         {
-			ApiEventManager.OnLevelUpSpell.AddListener(this, spell, OnLevelUp, true);
-        }
-		public void OnLevelUp (ISpell spell)
-        {
-			var owner = spell.CastInfo.Owner as IChampion;
-            AddBuff("ZedWPassiveBuff", 250000f, 1, spell, owner, owner);
-        }
-        public void OnDeactivate(IObjAiBase owner, ISpell spell)
-        {
-        }
-        public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
-        {
-        }
-
-        public void OnSpellCast(ISpell spell)
-        {
-			var owner = spell.CastInfo.Owner as IChampion;
-			spell.SetCooldown(0.5f, true);
-            var spellPos = new Vector2(spell.CastInfo.TargetPosition.X, spell.CastInfo.TargetPosition.Z);
-            SpellCast(owner, 4, SpellSlotType.ExtraSlots, spellPos, spellPos, true, Vector2.Zero);
-            PlayAnimation(owner, "Spell2_Cast", timeScale: 0.6f);
-        }
-
-        public void OnSpellPostCast(ISpell spell)
-        {
-			spell.SetCooldown(0.25f, true);
-        }
-
-        public void OnSpellChannel(ISpell spell)
-        {
-        }
-
-        public void OnSpellChannelCancel(ISpell spell, ChannelingStopSource reason)
-        {
-        }
-
-        public void OnSpellPostChannel(ISpell spell)
-        {
-        }
-
-        public void OnUpdate(float diff)
-        {
-        }
-    }
-
-    public class ZedShadowDashMissile : ISpellScript
-    {
-        public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
-        {
-            // TODO
-        };
-
-        IBuff HandlerBuff;
-        IMinion Shadow;
-
-        public void OnActivate(IObjAiBase owner, ISpell spell)
-        {
         }
 
         public void OnDeactivate(IObjAiBase owner, ISpell spell)
@@ -89,34 +38,21 @@ namespace Spells
 
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
-            HandlerBuff = AddBuff("ZedWHandler", 4.0f, 1, spell, owner, owner);
-            AddBuff("ZedW2", 4.0f, 1, spell, owner, owner);
-
-            if (Shadow != null)
-            {
-                var buff = Shadow.GetBuffWithName("ZedWShadowBuff");
-
-                if (buff != null)
-                {
-                    buff.DeactivateBuff();
-                }
-            }
-
-            var missile = spell.CreateSpellMissile(new MissileParameters
-            {
-                Type = MissileType.Circle,
-                OverrideEndPosition = end
-            });
-
-            ApiEventManager.OnSpellMissileEnd.AddListener(this, missile, OnMissileEnd, true);
+			Target = target;
+			//ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
+			float BBlood = target.Stats.HealthPoints.Total * 0.5f;
+			float XBlood = target.Stats.CurrentHealth;
+			if (BBlood >= XBlood && !Target.HasBuff("ZedPassiveToolTip") && Target.Team != owner.Team && !(Target is IObjBuilding || Target is IBaseTurret))
+			{
+				OverrideAnimation(owner, "attack_passive", "Attack1");
+			}
+			else
+			{
+				OverrideAnimation(owner, "Attack1", "attack_passive");
+			}
         }
-
-        public void OnMissileEnd(ISpellMissile missile)
+        public void OnLaunchAttack(ISpell spell)
         {
-            if (HandlerBuff != null)
-            {
-                Shadow = (HandlerBuff.BuffScript as Buffs.ZedWHandler).ShadowSpawn();
-            }
         }
 
         public void OnSpellCast(ISpell spell)
@@ -143,12 +79,13 @@ namespace Spells
         {
         }
     }
-
-    public class ZedW2 : ISpellScript
+    public class ZedBasicAttack2 : ISpellScript
     {
+		IAttackableUnit Target;
         public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
         {
             TriggersSpellCasts = true
+            // TODO
         };
 
         public void OnActivate(IObjAiBase owner, ISpell spell)
@@ -161,6 +98,92 @@ namespace Spells
 
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
+			Target = target;
+			//ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
+			float BBlood = target.Stats.HealthPoints.Total * 0.5f;
+			float XBlood = target.Stats.CurrentHealth;
+			if (BBlood >= XBlood && !Target.HasBuff("ZedPassiveToolTip") && Target.Team != owner.Team && !(Target is IObjBuilding || Target is IBaseTurret))
+			{
+				OverrideAnimation(owner, "attack_passive", "Attack2");
+			}
+			else
+			{
+				OverrideAnimation(owner, "Attack2", "attack_passive");
+			}
+        }
+        public void OnLaunchAttack(ISpell spell)
+        {
+			var owner = spell.CastInfo.Owner;
+        }
+
+        public void OnSpellCast(ISpell spell)
+        {
+        }
+
+        public void OnSpellPostCast(ISpell spell)
+        {
+        }
+
+        public void OnSpellChannel(ISpell spell)
+        {
+        }
+
+        public void OnSpellChannelCancel(ISpell spell, ChannelingStopSource reason)
+        {
+        }
+
+        public void OnSpellPostChannel(ISpell spell)
+        {
+        }
+
+        public void OnUpdate(float diff)
+        {
+        }
+    }
+	public class ZedCritAttack : ISpellScript
+    {
+		IAttackableUnit Target;
+        public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
+        {
+            TriggersSpellCasts = true
+            // TODO
+        };
+
+        public void OnActivate(IObjAiBase owner, ISpell spell)
+        {
+        }
+
+        public void OnDeactivate(IObjAiBase owner, ISpell spell)
+        {
+        }
+
+        public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
+        {
+			Target = target;
+			//ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
+			float BBlood = target.Stats.HealthPoints.Total * 0.5f;
+			float XBlood = target.Stats.CurrentHealth;
+			if (BBlood >= XBlood && !Target.HasBuff("ZedPassiveToolTip") && Target.Team != owner.Team && !(Target is IObjBuilding || Target is IBaseTurret))
+			{
+				OverrideAnimation(owner, "attack_passive", "Crit");
+			}
+			else
+			{
+				OverrideAnimation(owner, "Crit", "attack_passive");
+			}
+        }
+        public void OnLaunchAttack(ISpell spell)
+        {
+			var owner = spell.CastInfo.Owner;
+			float BBlood = Target.Stats.HealthPoints.Total * 0.5f;
+			float XBlood = Target.Stats.CurrentHealth;
+			if (BBlood >= XBlood && !Target.HasBuff("ZedPassiveToolTip") && Target.Team != owner.Team && !(Target is IObjBuilding || Target is IBaseTurret))
+			{		
+				AddBuff("ZedPassiveToolTip", 10f, 1, spell, Target, owner);
+			}
+			else
+			{
+			}
         }
 
         public void OnSpellCast(ISpell spell)
@@ -188,3 +211,4 @@ namespace Spells
         }
     }
 }
+
