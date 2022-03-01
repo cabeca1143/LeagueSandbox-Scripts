@@ -4,6 +4,7 @@ using GameServerCore.Enums;
 using GameServerCore.Scripting.CSharp;
 using LeagueSandbox.GameServer.GameObjects.Stats;
 using LeagueSandbox.GameServer.Scripting.CSharp;
+using System.Collections.Generic;
 using static LeagueSandbox.GameServer.API.ApiFunctionManager;
 
 namespace Buffs
@@ -39,16 +40,16 @@ namespace Buffs
                 }
                 pmodel = AddParticleTarget(c, c, pmodelname, c);
                 pmodel.SetToRemove();
-
+				OverrideAnimation(unit, "Run_ULT", "RUN");
                 StatsModifier.AttackSpeed.PercentBonus = (0.4f + (0.1f * (ownerSpell.CastInfo.SpellLevel - 1))) * buff.StackCount; // StackCount included here as an example
-                StatsModifier.Range.FlatBonus = 175f * buff.StackCount;
-
+                StatsModifier.Range.FlatBonus = 175f * buff.StackCount;             
                 unit.AddStatModifier(StatsModifier);
             }
         }
 
         public void OnDeactivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
         {
+			OverrideAnimation(unit, "RUN", "Run_ULT");
             RemoveParticle(pmodel);
         }
 
