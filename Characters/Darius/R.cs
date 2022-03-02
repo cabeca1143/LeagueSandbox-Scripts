@@ -1,26 +1,40 @@
-using LeagueSandbox.GameServer.API;
-using GameServerCore.Domain.GameObjects;
-using LeagueSandbox.GameServer.Scripting.CSharp;
-using System.Numerics;
-using static LeagueSandbox.GameServer.API.ApiFunctionManager;
+﻿using GameServerCore.Domain.GameObjects;
 using GameServerCore.Domain.GameObjects.Spell;
+using GameServerCore.Domain.GameObjects.Spell.Missile;
+using static LeagueSandbox.GameServer.API.ApiFunctionManager;
+using LeagueSandbox.GameServer.API;
+using LeagueSandbox.GameServer.Scripting.CSharp;
+using GameServerCore.Domain.GameObjects.Spell.Sector;
+using System.Numerics;
 using GameServerCore.Scripting.CSharp;
+using GameServerCore;
+using System;
+using System.Linq;
 using GameServerCore.Enums;
+
 namespace Spells
 {
     public class DariusExecute : ISpellScript
     {
-        IAttackableUnit Target;
-        public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
+        public ISpellScriptMetadata ScriptMetadata => new SpellScriptMetadata()
         {
             TriggersSpellCasts = true,
-            IsDamagingSpell = true
-            // TODO
+            CastingBreaksStealth = true,
+            DoesntBreakShields = true,
+            IsDamagingSpell = true,
+            NotSingleTargetSpell = true,
+
+
         };
+
+        IAttackableUnit Target;
 
         public void OnActivate(IObjAiBase owner, ISpell spell)
         {
+            //ApiEventManager.OnSpellHit.AddListener(this, spell, TargetExecute, false);
+            //ApiEventManager.OnSpellCast.AddListener(this, spell, CastSpell);
         }
+
 
         public void OnDeactivate(IObjAiBase owner, ISpell spell)
         {
@@ -29,47 +43,46 @@ namespace Spells
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
             Target = target;
+
         }
 
         public void OnSpellCast(ISpell spell)
         {
+
+
         }
 
         public void OnSpellPostCast(ISpell spell)
         {
             var owner = spell.CastInfo.Owner;
-			//var StackDamage = owner.GetBuffWithName("DariusHemo").StackCount;
-			//var MAX = StackDamage * 0.2f;
-            var ad = owner.Stats.AttackDamage.FlatBonus*1.5f;
-            var damage = 160 * spell.CastInfo.SpellLevel +ad;
-			//var MAXdamage = damage + damage * MAX;
-            Target.TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_TRUE, DamageSource.DAMAGE_SOURCE_SPELL, false);
-			if (Target.IsDead)
+            var AD = owner.Stats.AttackDamage.FlatBonus * 0.75f;
+            var damage = 70f + (90f * spell.CastInfo.SpellLevel) + AD;
+            if (!Target.HasBuff("DariusHemo"))
             {
-			AddBuff("DariusHemoVisual", 6.0f, 1, spell, owner, owner);
-			}
-			if (owner.HasBuff("DariusHemoVisual"))
-			{
-		    AddBuff("DariusHemo", 6.0f, 5, spell, Target, owner);
-			}
-			else
-			{
-			AddBuff("DariusHemo", 6.0f, 1, spell, Target, owner);
-			}
-            AddParticleTarget(owner, Target, "darius_R_tar.troy", Target);
-		    AddParticleTarget(owner, Target, "darius_R_tar_02.troy", Target, 10f);
-			AddParticleTarget(owner, Target, "darius_R_tar_03.troy", Target, 10f);
-			AddParticleTarget(owner, Target, "", Target, 10f);
-            AddParticleTarget(owner, Target, "darius_Base_R_tar.troy", Target, 1f, 1f);
-			AddParticleTarget(owner, owner, "darius_R_blood_spatter_self.troy", owner, 6f);
-            AddParticleTarget(owner, owner, "darius_R_cast_axe.troy", owner);
-			AddParticleTarget(owner, owner, "Darius_R_Ready.troy", owner);
+
+                Target.TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_TRUE, DamageSource.DAMAGE_SOURCE_SPELL, false);
+
+            }
+            if (Target.HasBuff("DariusHemo"))
+            {
+                int stackCount = Target.GetBuffWithName("DariusHemo").StackCount;
+                float enemystacks = stackCount;
+                var percbonusdamage = enemystacks * 0.20f;
+                float damagebonus = damage * percbonusdamage;
+                Target.TakeDamage(owner, damage + damagebonus, DamageType.DAMAGE_TYPE_TRUE, DamageSource.DAMAGE_SOURCE_SPELL, false);
+
+            }
+            AddBuff("DariusHemo", 5.100006f, 1, spell, Target, owner);
+
         }
 
         public void OnSpellChannel(ISpell spell)
         {
         }
+        public void CastSpell(ISpell spell)
+        {
 
+        }
         public void OnSpellChannelCancel(ISpell spell, ChannelingStopSource reason)
         {
         }
@@ -82,4 +95,5 @@ namespace Spells
         {
         }
     }
+
 }
