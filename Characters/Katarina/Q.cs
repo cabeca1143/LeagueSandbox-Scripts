@@ -35,14 +35,14 @@ namespace Spells
         public void TargetExecute(ISpell spell, IAttackableUnit target, ISpellMissile missile, ISpellSector sector)
         {
             var owner = spell.CastInfo.Owner as IChampion;
-            var ap = owner.Stats.AbilityPower.Total;
-            float damage = (float)(20 + ap * 0.4 + spell.CastInfo.SpellLevel * 20);
-            //target.TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
+            var ap = owner.Stats.AbilityPower.Total * 0.5f;
+            var damage = 45f + spell.CastInfo.SpellLevel * 35f + ap;
+            target.TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
             //AddParticleTarget(owner, target, "katarina_bouncingBlades_tar.troy", target);
             AddBuff("KatarinaQMark", 4f, 1, spell, target, owner, false);
             var xx = GetClosestUnitInRange(target, 300, true);
-            if (xx != owner) SpellCast(owner, 2, SpellSlotType.ExtraSlots, true, xx, target.Position);
-            if (missile is ISpellChainMissile chainMissile && chainMissile.ObjectsHit.Count > 3) missile.SetToRemove();
+            if (xx != owner && !xx.IsDead) SpellCast(owner, 2, SpellSlotType.ExtraSlots, true, xx, target.Position);
+            if (missile is ISpellChainMissile chainMissile && chainMissile.ObjectsHit.Count > 4) missile.SetToRemove();
         }
 
         public void OnDeactivate(IObjAiBase owner, ISpell spell)
@@ -120,7 +120,7 @@ namespace Spells
             //    return;
             //}
             AddBuff("KatarinaQMark", 4f, 1, spell, target, spell.CastInfo.Owner, false);
-            /* var x = GetClosestUnitInRange(target, 600, true);
+            /*var x = GetClosestUnitInRange(target, 600, true);
              if (x.IsDead == false)
              {
                  var owner = spell.CastInfo.Owner;
