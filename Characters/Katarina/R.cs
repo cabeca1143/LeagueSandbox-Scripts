@@ -1,4 +1,4 @@
-﻿using GameServerCore.Domain.GameObjects;
+using GameServerCore.Domain.GameObjects;
 using GameServerCore.Domain.GameObjects.Spell;
 using GameServerCore.Enums;
 using GameServerCore.Scripting.CSharp;
@@ -7,6 +7,7 @@ using System.Numerics;
 using static LeagueSandbox.GameServer.API.ApiFunctionManager;
 using GameServerCore.Domain.GameObjects.Spell.Missile;
 using GameServerCore.Domain.GameObjects.Spell.Sector;
+using LeagueSandbox.GameServer.API;
 
 namespace Spells
 {
@@ -61,7 +62,8 @@ namespace Spells
 
         public void OnSpellChannelCancel(ISpell spell, ChannelingStopSource reason)
         {
-            Owner.RemoveBuffsWithName("KatarinaR");
+			var owner = spell.CastInfo.Owner;
+            owner.RemoveBuffsWithName("KatarinaR");
         }
 
         public void OnSpellPostChannel(ISpell spell)
@@ -92,10 +94,17 @@ namespace Spells
 
         public void OnActivate(IObjAiBase owner, ISpell spell)
         {
+			ApiEventManager.OnSpellHit.AddListener(this, spell, TargetExecute, false);
         }
 
         public void TargetExecute(ISpell spell, IAttackableUnit target, ISpellMissile missile, ISpellSector sector)
         {
+			var owner = spell.CastInfo.Owner;
+            var AP = owner.Stats.AbilityPower.Total * 0.25f;
+            var AD = owner.Stats.AttackDamage.FlatBonus * 0.375f;
+            float damage = 15f + ( 20f * spell.CastInfo.SpellLevel) + AP + AD;
+			target.TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELLAOE, false);
+			AddParticleTarget(owner, target, "katarina_deathLotus_tar.troy", target);         	
         }
 
         public void OnDeactivate(IObjAiBase owner, ISpell spell)
