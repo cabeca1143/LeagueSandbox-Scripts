@@ -1,151 +1,143 @@
-using System.Numerics;
-using GameServerCore.Enums;
 using GameServerCore.Domain.GameObjects;
-using static LeagueSandbox.GameServer.API.ApiFunctionManager;
-using LeagueSandbox.GameServer.Scripting.CSharp;
 using GameServerCore.Domain.GameObjects.Spell;
 using GameServerCore.Domain.GameObjects.Spell.Missile;
-using LeagueSandbox.GameServer.API;
-using System.Collections.Generic;
-using GameServerCore.Scripting.CSharp;
 using GameServerCore.Domain.GameObjects.Spell.Sector;
-using GameServerCore;
-using LeagueSandbox.GameServer.GameObjects.Stats;
-using System.Linq;
-
+using GameServerCore.Enums;
+using GameServerCore.Scripting.CSharp;
+using LeagueSandbox.GameServer.API;
+using LeagueSandbox.GameServer.Scripting.CSharp;
+using System.Numerics;
+using static LeagueSandbox.GameServer.API.ApiFunctionManager;
 namespace Spells
 {
-    public class RivenTriCleave: ISpellScript
+    public class RivenTriCleave : ISpellScript
     {
-		ISpell spell;
-        int counter;
-        public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
+        public ISpellScriptMetadata ScriptMetadata => new SpellScriptMetadata()
         {
             TriggersSpellCasts = true
-            // TODO
         };
 
         public void OnActivate(IObjAiBase owner, ISpell spell)
-        {			
-        }
-
+        {          
+        }     
         public void OnDeactivate(IObjAiBase owner, ISpell spell)
         {
         }
 
+        public void DashFin(IAttackableUnit unit)
+        {
+			if (unit is IObjAiBase _owner)
+            {
+			var QLevel = _owner.GetSpell(0).CastInfo.SpellLevel;
+			var damage = 10 + (20 * (QLevel - 1)) + (_owner.Stats.AttackDamage.Total * 0.6f);
+			if(dash == 1)
+            {
+				_owner.SkipNextAutoAttack();
+                AddParticle(_owner, null, "exile_Q_01_detonate.troy", GetPointFromUnit(_owner, 125f));
+				var units = GetUnitsInRange(GetPointFromUnit(_owner, 80f), 260f, true);
+                for (int i = 0; i < units.Count; i++)
+                {
+                if (units[i].Team != _owner.Team && !(units[i] is IObjBuilding || units[i] is IBaseTurret))
+                    {					     
+                         units[i].TakeDamage(_owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
+						 AddParticleTarget(_owner, units[i], "RivenQ_tar.troy", units[i], 10f,1,"");
+				         AddParticleTarget(_owner, units[i], "exile_Q_tar_01.troy", units[i], 10f,1,"");
+						 AddParticleTarget(_owner, units[i], "exile_Q_tar_04.troy", units[i], 10f,1,"");
+                    }	
+                }
+            }
+			if(dash == 2)
+            {
+				_owner.SkipNextAutoAttack();
+                AddParticle(_owner, null, "exile_Q_02_detonate.troy", GetPointFromUnit(_owner, 125f));
+				var units = GetUnitsInRange(GetPointFromUnit(_owner, 80f), 260f, true);
+                for (int i = 0; i < units.Count; i++)
+                {
+                if (units[i].Team != _owner.Team && !(units[i] is IObjBuilding || units[i] is IBaseTurret))
+                    {					     
+                         units[i].TakeDamage(_owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
+						 AddParticleTarget(_owner, units[i], "RivenQ_tar.troy", units[i], 10f,1,"");
+				         AddParticleTarget(_owner, units[i], "exile_Q_tar_02.troy", units[i], 10f,1,"");
+						 AddParticleTarget(_owner, units[i], "exile_Q_tar_04.troy", units[i], 10f,1,"");
+                    }	
+                }
+            }
+            if(dash == 3)
+            {
+				_owner.SkipNextAutoAttack();
+				AddParticle(_owner, null, "exile_Q_03_detonate.troy", GetPointFromUnit(_owner, 125f)); 
+                var units = GetUnitsInRange(GetPointFromUnit(_owner, 80f), 300f, true);
+                for (int i = 0; i < units.Count; i++)
+                {
+                if (units[i].Team != _owner.Team && !(units[i] is IObjBuilding || units[i] is IBaseTurret))
+                    {					     
+                         units[i].TakeDamage(_owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
+						 AddBuff("Pulverize", 0.75f, 1, _spell, units[i], _owner);
+						 AddParticleTarget(_owner, units[i], "RivenQ_tar.troy", units[i], 10f,1,"");
+				         AddParticleTarget(_owner, units[i], "exile_Q_tar_03.troy", units[i], 10f,1,"");
+						 AddParticleTarget(_owner, units[i], "exile_Q_tar_04.troy", units[i], 10f,1,"");
+                    }	
+                }				
+            }
+			}
+        }
+        ISpellSector DamageSector;
+        int q = 0;
+        IObjAiBase _owner;
+        ISpell _spell;
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
-             SetStatus(owner, StatusFlags.Ghosted, true);			
+            _owner = owner;
+            _spell = spell;
+            var x = GetChampionsInRange(end, 200, true);
+            foreach(var champ in x)
+            {
+                if(champ.Team != owner.Team)
+                {
+                    FaceDirection(champ.Position, owner);
+                }
+            }
         }
 
         public void OnSpellCast(ISpell spell)
-        {	
+        {
         }
-
+        int dash = 0;
         public void OnSpellPostCast(ISpell spell)
         {
-			spell.SetCooldown(0.35f, true);
-			var owner = spell.CastInfo.Owner;
-			var QLevel = owner.GetSpell(0).CastInfo.SpellLevel;
-			var damage = 10 + (20 * (QLevel - 1)) + (owner.Stats.AttackDamage.Total * 0.6f);
-			var current = new Vector2(owner.Position.X, owner.Position.Y);
-            var spellPos = new Vector2(spell.CastInfo.TargetPosition.X, spell.CastInfo.TargetPosition.Z);
-            var dist = Vector2.Distance(current, spellPos);
-
-            if (dist > 260.0f)
+            var owner = spell.CastInfo.Owner;		
+            AddBuff("RivenTriCleave", 4.0f, 1, spell, owner, owner as IObjAiBase);
+			ApiEventManager.OnMoveEnd.AddListener(this, owner, DashFin, true);
+            var getbuff = owner.GetBuffWithName("RivenTriCleave");
+            switch (getbuff.StackCount)
             {
-                dist = 260.0f;
+                case 1:
+                    dash = 1;
+                    PlayAnimation(owner, "Spell1A", 0.75f);
+                    ForceMovement(owner, "Spell1A", GetPointFromUnit(owner, 225), 700, 0, 0, 0);
+                    AddParticle(owner, owner, "Riven_Base_Q_01_Wpn_Trail.troy", owner.Position, bone: "chest");              
+                    return;
+                case 2:
+                    dash = 2;
+                    PlayAnimation(owner, "Spell1B", 0.75f);
+                    ForceMovement(owner, "Spell1B", GetPointFromUnit(owner, 225), 700, 0, 0, 0);
+                    AddParticle(owner, owner, "Riven_Base_Q_02_Wpn_Trail.troy", owner.Position, bone: "chest");              
+                    return;
+                case 3:
+                    dash = 3;
+                    PlayAnimation(owner, "Spell1C", 0.75f);
+                    ForceMovement(owner, "Spell1C", GetPointFromUnit(owner, 250), 700, 0, 50, 0);
+                    AddParticle(owner, owner, "Riven_Base_Q_03_Wpn_Trail.troy", owner.Position, size: -1);
+					getbuff.DeactivateBuff();				
+                    return;
             }
-            AddBuff("RivenTriCleave", 6.0f, 1, spell, owner, owner);
-            FaceDirection(spellPos, owner, true);
-            var trueCoords = GetPointFromUnit(owner, dist);
-			FaceDirection(trueCoords, owner, true);
-				PlayAnimation(owner, "Spell1a",0.6f);
-				ForceMovement(owner, null, trueCoords, 1400, 0, 0, 0);
-                AddParticleTarget(owner, owner, ".troy", owner, 0.5f);
-                CreateTimer((float) 0.25 , () =>
-                {
-                AddParticleTarget(owner, owner, "Riven_Base_Q_01_Wpn_Trail.troy", owner, 3f, bone: "C_BuffBone_Glb_Center_Loc");					
-                AddParticle(owner, null, "exile_Q_01_detonate.troy", GetPointFromUnit(owner, 125f));
-				var units = GetUnitsInRange(GetPointFromUnit(owner, 125f), 260f, true);
-                for (int i = 0; i < units.Count; i++)
-                {
-                if (units[i].Team != owner.Team && !(units[i] is IObjBuilding || units[i] is IBaseTurret))
-                    {					     
-                         units[i].TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
-						 AddParticleTarget(owner, units[i], "RivenQ_tar.troy", units[i], 10f,1,"");
-				         AddParticleTarget(owner, units[i], "exile_Q_tar_01.troy", units[i], 10f,1,"");
-						 AddParticleTarget(owner, units[i], "exile_Q_tar_04.troy", units[i], 10f,1,"");
-                    }	
-                }
-			    });
-				counter++;
-				//AddParticle(owner, null, "RivenQStreakA.troy", owner.Position);
-           if (owner.HasBuff("RivenTriCleave"))
-             {			   
-                if (counter == 2)
-                {
-				spell.SetCooldown(0.35f, true);
-                PlayAnimation(owner, "Spell1b",0.6f);
-				ForceMovement(owner, null, trueCoords, 1400, 0, 0, 0);
-				AddParticleTarget(owner, owner, ".troy", owner, 0.5f);
-				AddBuff("RivenTriCleave", 6.0f, 1, spell, owner, owner);
-				CreateTimer((float) 0.25 , () =>
-                {
-                AddParticleTarget(owner, owner, "Riven_Base_Q_02_Wpn_Trail.troy", owner, 3f, bone: "C_BuffBone_Glb_Center_Loc");					
-                AddParticle(owner, null, "exile_Q_02_detonate.troy", GetPointFromUnit(owner, 125f));
-				var units = GetUnitsInRange(GetPointFromUnit(owner, 125f), 260f, true);
-				for (int i = 0; i < units.Count; i++)
-                {
-                if (units[i].Team != owner.Team && !(units[i] is IObjBuilding || units[i] is IBaseTurret))
-                    {					     
-                         units[i].TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
-						 AddParticleTarget(owner, units[i], "RivenQ_tar.troy", units[i], 10f,1,"");
-				         AddParticleTarget(owner, units[i], "exile_Q_tar_02.troy", units[i], 10f,1,"");
-						 AddParticleTarget(owner, units[i], "exile_Q_tar_04.troy", units[i], 10f,1,"");
-                    }	
-                }
-			    });
-				//AddParticle(owner, null, "RivenQStreakB.troy", owner.Position);
-                }	
-				if (counter == 3)
-                {
-				owner.Spells[0].SetCooldown(spell.SpellData.Cooldown[0]);
-                PlayAnimation(owner, "Spell1c",0.6f);
-				ForceMovement(owner, null, trueCoords, 1400, 0, 100, 0);
-                AddParticleTarget(owner, owner, ".troy", owner, 0.5f);
-				CreateTimer((float) 0.5 , () =>
-                {
-                AddParticleTarget(owner, owner, "Riven_Base_Q_03_Wpn_Trail.troy", owner, 3f, bone: "C_BuffBone_Glb_Center_Loc");					
-                AddParticle(owner, null, "exile_Q_03_detonate.troy", GetPointFromUnit(owner, 125f));
-				var units = GetUnitsInRange(GetPointFromUnit(owner, 125f), 260f, true);
-				for (int i = 0; i < units.Count; i++)
-                {
-                if (units[i].Team != owner.Team && !(units[i] is IObjBuilding || units[i] is IBaseTurret))
-                    {					     
-                         units[i].TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
-						 AddParticleTarget(owner, units[i], "RivenQ_tar.troy", units[i], 10f,1,"");
-				         AddParticleTarget(owner, units[i], "exile_Q_tar_03.troy", units[i], 10f,1,"");
-						 AddParticleTarget(owner, units[i], "exile_Q_tar_04.troy", units[i], 10f,1,"");
-                    }	
-                }	
-			    });	
-				//AddParticle(owner, null, "RivenQStreakC.troy", owner.Position);
-                SetStatus(owner, StatusFlags.Ghosted, false);
-                owner.RemoveBuffsWithName("RivenTriCleave");					
-                counter = 0;
-                }
-            }				
-        }
-		public void TargetExecute(ISpell spell, IAttackableUnit target, ISpellMissile missile, ISpellSector sector)
-        { 
         }
 
         public void OnSpellChannel(ISpell spell)
         {
         }
 
-        public void OnSpellChannelCancel(ISpell spell, ChannelingStopSource reason)
+        public void OnSpellChannelCancel(ISpell spell, ChannelingStopSource source)
         {
         }
 
@@ -156,7 +148,5 @@ namespace Spells
         public void OnUpdate(float diff)
         {
         }
-
     }
-
 }
