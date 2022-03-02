@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using GameServerCore.Domain.GameObjects;
 using GameServerCore.Domain.GameObjects.Spell;
 using GameServerCore.Enums;
@@ -29,7 +29,6 @@ namespace Buffs
         IAttackableUnit Target1;
         IAttackableUnit Target2;
         IAttackableUnit Target3;
-        float finaldamage;
         IParticle p;
 
         ISpell spell;
@@ -38,11 +37,7 @@ namespace Buffs
             IChampion champion = unit as IChampion;
             Owner = ownerSpell.CastInfo.Owner;
             spell = ownerSpell;
-            var owner = spell.CastInfo.Owner;
-            var AP = spell.CastInfo.Owner.Stats.AbilityPower.Total * 0.25f;
-            var AD = spell.CastInfo.Owner.Stats.AttackDamage.FlatBonus * 0.375f;
-            float damage = 15f + ( 20f * spell.CastInfo.SpellLevel) + AP + AD;
-            finaldamage = damage;
+			var owner = ownerSpell.CastInfo.Owner;
             p = AddParticleTarget(owner, owner, "Katarina_deathLotus_cas.troy", owner, lifetime: 2.5f, bone: "C_BUFFBONE_GLB_CHEST_LOC");
 
 
@@ -52,11 +47,10 @@ namespace Buffs
                 foreach (var enemy in champs.GetRange(0, 4)
                      .Where(x => x.Team == CustomConvert.GetEnemyTeam(owner.Team)))
                 {
-                    SpellCast(owner, 0, SpellSlotType.ExtraSlots, true, enemy, owner.Position);
+					SpellCast(owner, 0, SpellSlotType.ExtraSlots, true, enemy, Vector2.Zero);
                     if (Target1 == null) Target1 = enemy;
                     else if (Target2 == null) Target2 = enemy;
-                    else if (Target3 == null) Target3 = enemy;
-                    enemy.TakeDamage(Owner, finaldamage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELLAOE, false);
+                    else if (Target3 == null) Target3 = enemy;                 
                 }
             }
             else
@@ -64,18 +58,17 @@ namespace Buffs
                 foreach (var enemy in champs.GetRange(0, champs.Count)
                     .Where(x => x.Team == CustomConvert.GetEnemyTeam(owner.Team)))
                 {
-                    SpellCast(owner, 0, SpellSlotType.ExtraSlots, true, enemy, owner.Position);
+                    SpellCast(owner, 0, SpellSlotType.ExtraSlots, true, enemy, Vector2.Zero);
                     if (Target1 == null) Target1 = enemy;
                     else if (Target2 == null) Target2 = enemy;
-                    else if (Target3 == null) Target3 = enemy;
-                    enemy.TakeDamage(Owner, finaldamage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELLAOE, false);
+                    else if (Target3 == null) Target3 = enemy;                 
                 }
             }
         }
         public void OnDeactivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
         {
             RemoveParticle(p);
-            PlayAnimation(Owner, "Idle", 1);
+            StopAnimation(Owner, "Spell4");
         }
 
         public void OnPreAttack(ISpell spell)
@@ -87,9 +80,9 @@ namespace Buffs
             somerandomTick += diff;
             if (somerandomTick >= 250f)
             {
-                if (Target1 != null) Target1.TakeDamage(Owner, finaldamage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELLAOE, false);
-                if (Target2 != null) Target2.TakeDamage(Owner, finaldamage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELLAOE, false);
-                if (Target3 != null) Target3.TakeDamage(Owner, finaldamage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELLAOE, false);
+                if (Target1 != null) SpellCast(Owner, 0, SpellSlotType.ExtraSlots, true, Target1, Vector2.Zero);
+                if (Target2 != null) SpellCast(Owner, 0, SpellSlotType.ExtraSlots, true, Target2, Vector2.Zero);
+                if (Target3 != null) SpellCast(Owner, 0, SpellSlotType.ExtraSlots, true, Target3, Vector2.Zero);
                 somerandomTick = 0;
             }
 
