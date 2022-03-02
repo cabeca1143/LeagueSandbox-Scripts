@@ -1,6 +1,4 @@
 using System.Numerics;
-using System.Linq;
-using System.Numerics;
 using System.Collections.Generic;
 using GameServerCore.Domain.GameObjects;
 using GameServerCore.Domain.GameObjects.Spell;
@@ -40,7 +38,8 @@ namespace Buffs
             SealSpellSlot(owner, SpellSlotType.SpellSlots, 1, SpellbookType.SPELLBOOK_CHAMPION, true);
 			ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
             owner.CancelAutoAttack(true);
-			}
+            owner.SkipNextAutoAttack();
+            }
         }
 
         public void OnDeactivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
