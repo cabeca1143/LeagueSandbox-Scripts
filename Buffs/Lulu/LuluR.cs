@@ -31,7 +31,8 @@ namespace Buffs
             var owner = ownerSpell.CastInfo.Owner;
             OwnerSpell = ownerSpell;
             cast = AddParticleTarget(owner, unit, "Lulu_R_cas", unit);
-
+            PlayAnimation(owner, "Spell4", 1f);
+            AddParticleTarget(OwnerSpell.CastInfo.Owner, unit, "Lulu_R_knock_up_impact.troy", unit);
             StatsModifier.Size.PercentBonus = StatsModifier.Size.PercentBonus + 1;
             _healthBefore = unit.Stats.CurrentHealth;
             _healthBonus = 150 + 150 * ownerSpell.CastInfo.SpellLevel;
