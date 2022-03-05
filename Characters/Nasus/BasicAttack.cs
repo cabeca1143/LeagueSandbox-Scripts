@@ -25,12 +25,20 @@ namespace Spells
 
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
-            ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
+            if (owner.HasBuff("NasusQ"))
+            {
+				OverrideAnimation(owner, "Spell1", "Attack1");
+			}
+			else
+			{
+				OverrideAnimation(owner, "Attack1", "Spell1");
+			}
+            //ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
         }
 
         public void OnLaunchAttack(ISpell spell)
         {
-            spell.CastInfo.Owner.SetAutoAttackSpell("NasusBasicAttack2", false);
+            //spell.CastInfo.Owner.SetAutoAttackSpell("NasusBasicAttack2", false);
         }
 
         public void OnSpellCast(ISpell spell)
@@ -75,12 +83,20 @@ namespace Spells
 
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
-            ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
+            if (owner.HasBuff("NasusQ"))
+            {
+				OverrideAnimation(owner, "Spell1", "Attack2");
+			}
+			else
+			{
+				OverrideAnimation(owner, "Attack2", "Spell1");
+			}
+            //ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
         }
 
         public void OnLaunchAttack(ISpell spell)
         {
-            spell.CastInfo.Owner.SetAutoAttackSpell("NasusBasicAttack", false);
+            //spell.CastInfo.Owner.SetAutoAttackSpell("NasusBasicAttack", false);
         }
 
         public void OnSpellCast(ISpell spell)
