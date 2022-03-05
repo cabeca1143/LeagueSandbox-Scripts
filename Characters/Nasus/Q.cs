@@ -97,7 +97,7 @@ namespace Spells
 					AddParticleTarget(Owner, Target, "Nasus_Base_Q_Tar.troy", Target);
                     if (Target.IsDead)
                     {
-                         AddBuff("NasusQStacks", 2500000f, 3, spell, owner, owner);
+                         AddBuff("NasusQStacks", 2500000f, 3, spell, Owner, Owner);
                     }
 
                 }
@@ -109,7 +109,7 @@ namespace Spells
 					AddParticleTarget(Owner, Target, "Nasus_Base_Q_Tar.troy", Target);
                     if (Target.IsDead)
                     {
-                         AddBuff("NasusQStacks", 2500000f, 3, spell, owner, owner);
+                         AddBuff("NasusQStacks", 2500000f, 3, spell, Owner, Owner);
                     }
 				}
         }
