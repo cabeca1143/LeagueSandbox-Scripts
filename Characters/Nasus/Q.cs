@@ -1,63 +1,50 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
+using GameServerCore.Enums;
 using GameServerCore.Domain.GameObjects;
 using GameServerCore.Domain.GameObjects.Spell;
-using GameServerCore.Domain.GameObjects.Spell.Missile;
-using GameServerCore.Enums;
-using LeagueSandbox.GameServer.API;
 using static LeagueSandbox.GameServer.API.ApiFunctionManager;
 using LeagueSandbox.GameServer.Scripting.CSharp;
+using System.Numerics;
+using LeagueSandbox.GameServer.API;
+using System.Collections.Generic;
+using GameServerCore.Domain.GameObjects.Spell.Missile;
 using GameServerCore.Scripting.CSharp;
 using GameServerCore.Domain.GameObjects.Spell.Sector;
-
 
 namespace Spells
 {
     public class NasusQ : ISpellScript
     {
-        IObjAiBase Owner;
-        IAttackableUnit Target;
-        IAttackableUnit owner2;
-        ISpell spelll;
         public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
         {
-            TriggersSpellCasts = true
+            TriggersSpellCasts = true,
+            NotSingleTargetSpell = true
+            // TODO
         };
 
         public void OnActivate(IObjAiBase owner, ISpell spell)
         {
-           
-         //   ApiEventManager.OnLevelUpSpell.AddListener(this, owner.GetSpell("NasusQ"), AddNasusQStacksBuff, false);
+			ApiEventManager.OnLevelUpSpell.AddListener(this, spell, OnLevelUp, true);
         }
-
+		public void OnLevelUp (ISpell spell)
+        {
+			var owner = spell.CastInfo.Owner;
+        }
         public void OnDeactivate(IObjAiBase owner, ISpell spell)
         {
         }
 
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
-            Target = target;
-            Owner = owner;
-            spelll = spell;
-        }
-
-
-        public void AddNasusQStacksBuff(ISpell spell)
-        {
-          // AddBuff("NasusQStacks", 25000f, 1, spell, owner, owner, true);
+            AddBuff("NasusQ", 6.0f, 1, spell, owner, owner);
         }
 
         public void OnSpellCast(ISpell spell)
         {
-            //AddBuff("NasusQStacks", 25000f, 1, spell, spell.CastInfo.Owner, spell.CastInfo.Owner, true);
-            AddBuff("NasusQAttack", 5f, 1, spell, spell.CastInfo.Owner, spell.CastInfo.Owner);
         }
 
         public void OnSpellPostCast(ISpell spell)
         {
         }
-
-
 
         public void OnSpellChannel(ISpell spell)
         {
@@ -75,78 +62,71 @@ namespace Spells
         {
         }
     }
-
-
-    /*public class NasusQAttack : ISpellScript
+    public class NasusQAttack : ISpellScript
     {
-        IObjAiBase Owner;
-        IAttackableUnit Target;
-        IAttackableUnit owner2;
-        ISpell spelll;
+		IAttackableUnit Target;
         public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
         {
-            TriggersSpellCasts = true
+			TriggersSpellCasts = true,
+            NotSingleTargetSpell = true,
+			IsDamagingSpell = true,
+            // TODO
         };
-
         public void OnActivate(IObjAiBase owner, ISpell spell)
         {
-            IAttackableUnit atunit;
-            atunit = spell.CastInfo.Owner.TargetUnit;
-
-            ApiEventManager.OnSpellHit.AddListener(this, spell, TargetExecute, false);
         }
-
+        public void TargetExecute(ISpell spell, IAttackableUnit target, ISpellMissile missile, ISpellSector sector)
+        {
+        }
         public void OnDeactivate(IObjAiBase owner, ISpell spell)
         {
         }
-
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
-            Target = target;
-            Owner = owner;
-            spelll = spell;
+			Target = target;
         }
-
-
-        public void TargetExecute(ISpell spell, IAttackableUnit target, ISpellMissile missile, ISpellSector sector)
-        {
-            var owner = spell.CastInfo.Owner;
-
-            //AddParticle(owner, null, "Leona_ShieldOfDaybreak_nova.troy", target.Position);
-            //AddParticleTarget(owner, target, "Leona_ShieldOfDaybreak_tar.troy", target);
-
-            var ap = owner.Stats.AbilityPower.Total * 0.3f;
-            var damage = 40 + (30 * (spell.CastInfo.SpellLevel - 1)) + ap;
-
-            target.TakeDamage(owner, damage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
-        }
-
         public void OnSpellCast(ISpell spell)
         {
+			var Owner = spell.CastInfo.Owner;
+                if ( Owner.HasBuff("NasusQStacks"))
+                {       
+                    float StackDamage = Owner.GetBuffWithName("NasusQStacks").StackCount;
+                    float ownerdamage = spell.CastInfo.Owner.Stats.AttackDamage.Total;
+                    float damage = 15 + 25 * Owner.GetSpell(0).CastInfo.SpellLevel + StackDamage + ownerdamage;                 
+                    Target.TakeDamage(Owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_ATTACK, false);
+					AddParticleTarget(Owner, Target, "Nasus_Base_Q_Tar.troy", Target);
+                    if (Target.IsDead)
+                    {
+                         AddBuff("NasusQStacks", 2500000f, 3, spell, owner, owner);
+                    }
 
+                }
+                else 
+                {
+                    float ownerdamage = spell.CastInfo.Owner.Stats.AttackDamage.Total;
+                    float damage = 15 + 25 * Owner.GetSpell(0).CastInfo.SpellLevel + ownerdamage ;                  
+                    Target.TakeDamage(Owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_ATTACK, false);
+					AddParticleTarget(Owner, Target, "Nasus_Base_Q_Tar.troy", Target);
+                    if (Target.IsDead)
+                    {
+                         AddBuff("NasusQStacks", 2500000f, 3, spell, owner, owner);
+                    }
+				}
         }
-
         public void OnSpellPostCast(ISpell spell)
         {
         }
-
-
-
         public void OnSpellChannel(ISpell spell)
         {
         }
-
         public void OnSpellChannelCancel(ISpell spell, ChannelingStopSource reason)
         {
         }
-
         public void OnSpellPostChannel(ISpell spell)
         {
         }
-
         public void OnUpdate(float diff)
         {
         }
-    }*/
-
+    }
 }
