@@ -16,32 +16,21 @@ namespace Buffs
         {
             BuffType = BuffType.COUNTER,
             BuffAddType = BuffAddType.STACKS_AND_RENEWS,
-            MaxStacks = 999999
+            MaxStacks = int.MaxValue
         };
 
         public IStatsModifier StatsModifier { get; private set; } = new StatsModifier();
 
-        IBuff thisBuff;
-        IObjAiBase Unit;
-        IParticle p;
-        IParticle p2;
-        IObjAiBase Owner;
-        IAttackableUnit AtOwner;
-        public static float Qstacks = 0f;
         public void OnActivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
         {
-            //ApiEventManager.OnKillUnit.AddListener(this, AtOwner, NasusMoreStacks, true);
         }
 
         public void OnDeactivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
         {
-            //ApiEventManager.OnHitUnit.RemoveListener(this);
-
         }
 
         public void OnUpdate(float diff)
         {
-
         }
     }
 }

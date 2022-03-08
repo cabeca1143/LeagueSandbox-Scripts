@@ -22,61 +22,44 @@ namespace Buffs
 
         public IStatsModifier StatsModifier { get; private set; } = new StatsModifier();
 
-        IParticle pbuff;
-        IParticle pbuff2;
-        IBuff thisBuff;
-		IObjAiBase owner;
-
+        IBuff Buff;
+        IParticle p1;
         public void OnActivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
         {
-            thisBuff = buff;
-			if (unit is IObjAiBase ai)
+            Buff = buff;
+            if (unit is IObjAiBase obj)
             {
-            var owner = ownerSpell.CastInfo.Owner as IChampion;
-			pbuff = AddParticleTarget(ownerSpell.CastInfo.Owner, ownerSpell.CastInfo.Owner, "Nasus_Base_Q_Buf.troy", unit, buff.Duration, 1, "BUFFBONE_CSTM_WEAPON_1");
-            //pbuff2 = AddParticleTarget(ownerSpell.CastInfo.Owner, ownerSpell.CastInfo.Owner, "Nasus_Base_Q_Wpn_trail.troy", unit, buff.Duration, 1, "BUFFBONE_CSTM_WEAPON_1");
-			StatsModifier.Range.FlatBonus = 50.0f;
-			unit.AddStatModifier(StatsModifier);
-            //SetAnimStates(owner, new Dictionary<string, string> { { "Attack1", "Spell1" } });
-            SealSpellSlot(owner, SpellSlotType.SpellSlots, 0, SpellbookType.SPELLBOOK_CHAMPION, true);
-			ApiEventManager.OnLaunchAttack.AddListener(this, owner, OnLaunchAttack, false);
-            owner.CancelAutoAttack(true);
-			}
+                SealSpellSlot(obj, SpellSlotType.SpellSlots, 0, SpellbookType.SPELLBOOK_CHAMPION, true);
+                ApiEventManager.OnPreAttack.AddListener(this, obj, OnPreAttack, true);
+                p1 = AddParticleTarget(obj, obj, "Nasus_Base_Q_Buf", obj, buff.Duration, 1, "BUFFBONE_CSTM_WEAPON_1", "weapon_b1");
+                obj.CancelAutoAttack(true);
+            }
+        }
+
+        public void OnPreAttack(ISpell spell)
+        {
+            //Theoretically, this would skip the character's next basic attack damage, but doesnt seem to be working anymore, has to be investigated.
+            spell.CastInfo.Owner.SkipNextAutoAttack();
+
+            SpellCast(spell.CastInfo.Owner, 0, SpellSlotType.ExtraSlots, false, spell.CastInfo.Targets[0].Unit, Vector2.Zero);
+
+            if(Buff != null)
+            {
+                Buff.DeactivateBuff();
+            }
         }
 
         public void OnDeactivate(IAttackableUnit unit, IBuff buff, ISpell ownerSpell)
         {
-			var owner = ownerSpell.CastInfo.Owner as IChampion;
-			RemoveParticle(pbuff);
-            RemoveParticle(pbuff2);
-			RemoveBuff(thisBuff);
-			CreateTimer(0.5f, () =>
+            if (unit is IObjAiBase obj)
             {
-			//SetAnimStates(owner, new Dictionary<string, string> { { "Spell1", "Attack1" } });
-			});
-			if (buff.TimeElapsed >= buff.Duration)
-            {
-                ApiEventManager.OnLaunchAttack.RemoveListener(this);
+                ApiEventManager.OnPreAttack.RemoveListener(this);
+                SealSpellSlot(obj, SpellSlotType.SpellSlots, 0, SpellbookType.SPELLBOOK_CHAMPION, false);
+                RemoveParticle(p1);
             }
-			if (unit is IObjAiBase ai)
-            {
-                SealSpellSlot(ai, SpellSlotType.SpellSlots, 0, SpellbookType.SPELLBOOK_CHAMPION, false);
-            }
+
         }
 
-        public void OnLaunchAttack(ISpell spell)
-        {
-			
-			if (thisBuff != null && thisBuff.StackCount != 0 && !thisBuff.Elapsed())
-            {                       
-            spell.CastInfo.Owner.RemoveBuff(thisBuff);
-            var owner = spell.CastInfo.Owner as IChampion;
-            spell.CastInfo.Owner.SkipNextAutoAttack();
-            SpellCast(spell.CastInfo.Owner, 0, SpellSlotType.ExtraSlots, false, spell.CastInfo.Owner.TargetUnit, Vector2.Zero);
-            SealSpellSlot(owner, SpellSlotType.SpellSlots, 0, SpellbookType.SPELLBOOK_CHAMPION, false);
-            thisBuff.DeactivateBuff();
-			}
-        }
         public void OnUpdate(float diff)
         {
         }

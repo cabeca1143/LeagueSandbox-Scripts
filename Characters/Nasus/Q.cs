@@ -64,12 +64,9 @@ namespace Spells
     }
     public class NasusQAttack : ISpellScript
     {
-		IAttackableUnit Target;
         public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
         {
 			TriggersSpellCasts = true,
-            NotSingleTargetSpell = true,
-			IsDamagingSpell = true,
             // TODO
         };
         public void OnActivate(IObjAiBase owner, ISpell spell)
@@ -83,39 +80,44 @@ namespace Spells
         }
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
-			Target = target;
+            //Packets dont have any manual cast to the animation, so we're probably missing something.
+            //Maybe something broke along the way?
+            //Note: Idk if using the attack speed as animation speed is correct.
+            spell.CastInfo.Owner.PlayAnimation("Spell1", spell.CastInfo.Owner.Stats.GetTotalAttackSpeed());
         }
         public void OnSpellCast(ISpell spell)
         {
-			var Owner = spell.CastInfo.Owner;
-                if ( Owner.HasBuff("NasusQStacks"))
-                {       
-                    float StackDamage = Owner.GetBuffWithName("NasusQStacks").StackCount;
-                    float ownerdamage = spell.CastInfo.Owner.Stats.AttackDamage.Total;
-                    float damage = 15 + 25 * Owner.GetSpell(0).CastInfo.SpellLevel + StackDamage + ownerdamage;                 
-                    Target.TakeDamage(Owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_ATTACK, false);
-					AddParticleTarget(Owner, Target, "Nasus_Base_Q_Tar.troy", Target);
-                    if (Target.IsDead)
-                    {
-                         AddBuff("NasusQStacks", 2500000f, 3, spell, Owner, Owner);
-                    }
-
-                }
-                else 
-                {
-                    float ownerdamage = spell.CastInfo.Owner.Stats.AttackDamage.Total;
-                    float damage = 15 + 25 * Owner.GetSpell(0).CastInfo.SpellLevel + ownerdamage ;                  
-                    Target.TakeDamage(Owner, damage, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_ATTACK, false);
-					AddParticleTarget(Owner, Target, "Nasus_Base_Q_Tar.troy", Target);
-                    if (Target.IsDead)
-                    {
-                         AddBuff("NasusQStacks", 2500000f, 3, spell, Owner, Owner);
-                    }
-				}
         }
         public void OnSpellPostCast(ISpell spell)
         {
+            var owner = spell.CastInfo.Owner;
+            var target = spell.CastInfo.Targets[0].Unit;
+            var stackCount = GetStackCount(owner);
+
+            target.TakeDamage(owner, owner.Stats.AttackDamage.Total + stackCount, DamageType.DAMAGE_TYPE_PHYSICAL, DamageSource.DAMAGE_SOURCE_ATTACK, false);
+
+            if (target.IsDead)
+            {
+                //We still gotta fix this buff counter thing
+                AddBuff("NasusQStacks", 25000, 1, spell, owner, owner);
+                AddBuff("NasusQStacks", 25000, 1, spell, owner, owner);
+                AddBuff("NasusQStacks", 25000, 1, spell, owner, owner);
+
+                //Ideally we'd do this within the buff script, but it seems counter buffs never get their script activated.
+                //Essentially all this does is update the buff's tooltip to show the proper stack count
+                SetBuffToolTipVar(owner.GetBuffWithName("NasusQStacks"), 0, GetStackCount(owner));
+            }
         }
+
+        public int GetStackCount(IObjAiBase owner)
+        {
+            if (owner.HasBuff("NasusQStacks"))
+            {
+                return owner.GetBuffWithName("NasusQStacks").StackCount;
+            }
+            return 0;
+        }
+
         public void OnSpellChannel(ISpell spell)
         {
         }
