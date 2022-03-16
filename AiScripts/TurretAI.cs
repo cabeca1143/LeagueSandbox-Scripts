@@ -89,7 +89,7 @@ namespace AIScripts
                 return;
             }
 
-            baseTurret.SetTargetUnit(nextTarget, false);
+            baseTurret.SetTargetUnit(nextTarget, true);
         }
 
 

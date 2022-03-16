@@ -39,7 +39,7 @@ namespace Spells
         public void OnSpellCast(ISpell spell)
         {
             var owner = spell.CastInfo.Owner;
-            AddParticleTarget(owner, owner, "SRU_Chaos_Nexus_explosion", owner, 10, 5, bone: "L_HAND");
+            AddParticleTarget(owner, owner, "ezreal_bow", owner, bone: "L_HAND");
         }
 
         public void OnSpellPostCast(ISpell spell)

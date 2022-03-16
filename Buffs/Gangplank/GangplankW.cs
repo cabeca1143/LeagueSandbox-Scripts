@@ -7,13 +7,11 @@ using LeagueSandbox.GameServer.Scripting.CSharp;
 
 namespace Buffs
 {
-    internal class PirateScurvy : IBuffGameScript
+    internal class GangplankW : IBuffGameScript
     {
         public IBuffScriptMetaData BuffMetaData { get; set; } = new BuffScriptMetaData
         {
-            BuffType = BuffType.HEAL,
-            BuffAddType = BuffAddType.RENEW_EXISTING,
-            MaxStacks = 1
+            BuffType = BuffType.HEAL
         };
 
         public IStatsModifier StatsModifier { get; private set; } = new StatsModifier();
@@ -30,6 +28,7 @@ namespace Buffs
 
         public void OnUpdate(float diff)
         {
+
         }
     }
 }
