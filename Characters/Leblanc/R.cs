@@ -154,10 +154,15 @@ namespace Spells
 	
     public class LeblancSlideM: ISpellScript
     {
-
+        ISpell spell;
+		IParticle P;
         public ISpellScriptMetadata ScriptMetadata { get; private set; } = new SpellScriptMetadata()
         {
-            TriggersSpellCasts = true
+            CastingBreaksStealth = true,
+            DoesntBreakShields = true,
+            TriggersSpellCasts = true,
+            IsDamagingSpell = false,
+            NotSingleTargetSpell = true
         };
 
         public void OnActivate(IObjAiBase owner, ISpell spell)
@@ -170,12 +175,19 @@ namespace Spells
 
         public void OnSpellPreCast(IObjAiBase owner, ISpell spell, IAttackableUnit target, Vector2 start, Vector2 end)
         {
+			ApiEventManager.OnMoveEnd.AddListener(this, owner, OnMoveEnd, true);
+			ApiEventManager.OnMoveSuccess.AddListener(this, owner, OnMoveSuccess, true);
         }
 
         public void OnSpellCast(ISpell spell)
         {
 			var owner = spell.CastInfo.Owner;
+			PlayAnimation(owner, "Spell2");
+			P = AddParticleTarget(owner, owner, "LeBlanc_Base_RW_mis.troy", owner);
+			AddParticle(owner, null, "LeBlanc_Base_RW_cas.troy", owner.Position);
+			SetStatus(owner, StatusFlags.Ghosted, true);
 			AddBuff("LeblancSlideM", 4.0f, 1, spell, owner, owner);
+			AddBuff("LeblancSlideMoveM", 3.5f, 1, spell, owner, owner);
 			IMinion Leblanc = AddMinion(owner, "TestCube", "TestCube", owner.Position, owner.Team, owner.SkinID, true, false);
 			AddBuff("LeblancSlideReturnM", 4.0f, 1, spell, Leblanc, owner);
         }
@@ -198,23 +210,20 @@ namespace Spells
             {
                 truecoords = Cursor;
             }
-			var dist = System.Math.Abs(Vector2.Distance(truecoords, owner.Position));
-            var time = dist / 1450f;
-			owner.Stats.SetActionState(ActionState.CAN_MOVE, false);	 
-			AddParticleTarget(owner, owner, "LeBlanc_Base_RW_mis.troy", owner, 0.5f);
-			AddParticle(owner, null, "LeBlanc_Base_RW_cas.troy", owner.Position,time);
 			FaceDirection(truecoords, spell.CastInfo.Owner, true);
-            ForceMovement(owner, null, truecoords, 1450, 0, 0, 0);
-            PlayAnimation(owner, "Spell2",time);
-			//var time1 = dist + 0.2f;
-			CreateTimer((float) time , () =>
+            ForceMovement(owner, null, truecoords, 1450, 0, 0, 0);        
+        }
+		public void OnMoveEnd(IAttackableUnit owner)
+        {
+			SetStatus(owner, StatusFlags.Ghosted, false);
+            StopAnimation(owner, "Spell2",true,true,true);
+			RemoveParticle(P);
+        }
+		public void OnMoveSuccess(IAttackableUnit owner)
+        {
+            if (owner is IChampion c)
             {
-            if (spell.CastInfo.Owner is IChampion c)
-            {
-				//c.GetSpell(1).LowerCooldown(20);
-				StopAnimation(owner, "Spell2");
 			    AddParticle(c, null, "LeBlanc_Base_RW_aoe_impact_02.troy", c.Position);
-
                 var units = GetUnitsInRange(c.Position, 260f, true);
                 for (int i = 0; i < units.Count; i++)
                 {
@@ -229,33 +238,25 @@ namespace Spells
 						var damageeQW = damage + damageQMake;
 						var damageRQMake=100 + 100f*(SpellLevel - 1)+ MAXAP;
 						var damageeRQW = damage + damageRQMake;
+						AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar.troy", units[i], 1f);
+				        AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar_02.troy", units[i], 1f);
 						if (units[i].HasBuff("LeblancChaosOrb"))
                             {
-							units[i].TakeDamage(c, damageeQW, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELL, true);
-							AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar.troy", units[i], 1f);
-				            AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar_02.troy", units[i], 1f);
+							units[i].TakeDamage(c, damageeQW, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELL, true);						
 					        units[i].RemoveBuffsWithName("LeblancChaosOrb");
                             }
 						if (units[i].HasBuff("LeblancChaosOrbM"))
                             {
 							units[i].TakeDamage(c, damageeRQW, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELL, true);
-							AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar.troy", units[i], 1f);
-				            AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar_02.troy", units[i], 1f);
 					        units[i].RemoveBuffsWithName("LeblancChaosOrbM");
                             }
 						else
 							{
                             units[i].TakeDamage(c, damage, DamageType.DAMAGE_TYPE_MAGICAL, DamageSource.DAMAGE_SOURCE_SPELL, false);
-						    AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar.troy", units[i], 1f);
-				            AddParticleTarget(c, units[i], "LeBlanc_Base_RW_tar_02.troy", units[i], 1f);
 						    }
                     }
                 }             
-            }
-           });			
-        }
-		public void TargetExecute(ISpell spell, IAttackableUnit target, ISpellMissile missile, ISpellSector sector)
-        { 
+            }			
         }
 
         public void OnSpellChannel(ISpell spell)
